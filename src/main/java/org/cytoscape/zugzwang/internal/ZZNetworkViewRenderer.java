@@ -7,9 +7,10 @@ import org.cytoscape.view.presentation.RenderingEngineFactory;
 
 /**
  * This is the main service that is registered with Cytoscape so that it
- * picks up the 3D renderer.
- * 
- * @author mkucera
+ * picks up the 3D renderer. Despite its suggestive name, this class doesn't
+ * render anything itself. Instead, it contains factory objects to instantiate
+ * network view models (which are also network rendering engines), and bird's
+ * eye view rendering engines (which are camera control panels in Zugzwang).
  */
 public class ZZNetworkViewRenderer implements NetworkViewRenderer 
 {
@@ -33,12 +34,23 @@ public class ZZNetworkViewRenderer implements NetworkViewRenderer
 		return ID;
 	}
 
+	/**
+	 * Gets a factory that instantiates network view models, 
+	 * which are also their own main rendering engines.
+	 * 
+	 * @return Network view factory
+	 */
 	@Override
 	public CyNetworkViewFactory getNetworkViewFactory() 
 	{
 		return networkViewFactory;
 	}
 
+	/**
+	 * Gets a rendering engine factory for the provided context.
+	 * 
+	 * @return Rendering engine factory of the specified type
+	 */
 	@Override
 	public RenderingEngineFactory<CyNetwork> getRenderingEngineFactory(String context) 
 	{

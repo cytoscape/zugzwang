@@ -7,6 +7,9 @@ import org.cytoscape.zugzwang.internal.algebra.Ray3;
 import org.cytoscape.zugzwang.internal.algebra.Vector2;
 import org.cytoscape.zugzwang.internal.camera.Camera;
 
+/**
+ * Mouse action-related events raised by a viewport.
+ */
 public class ViewportMouseEvent 
 {
 	public final boolean m1;	// Left button
@@ -61,11 +64,11 @@ public class ViewportMouseEvent
 		
 		
 		this.offsetRaw = offset;
-		this.offsetScaled = Vector2.ScalarMult(scaleDPI, offset);
+		this.offsetScaled = Vector2.scalarMult(scaleDPI, offset);
 		this.delta = 0;
 		
 		this.positionRaw = new Vector2(e.getX(), e.getY());
-		this.positionScaled = Vector2.ScalarMult(scaleDPI, positionRaw);
+		this.positionScaled = Vector2.scalarMult(scaleDPI, positionRaw);
 		this.positionRay = camera.getRayThroughPixel(positionRaw);
 	}
 	
@@ -85,7 +88,7 @@ public class ViewportMouseEvent
 		this.delta = e.getWheelRotation();
 		
 		this.positionRaw = new Vector2(e.getX(), e.getY());
-		this.positionScaled = Vector2.ScalarMult(scaleDPI, positionRaw);
+		this.positionScaled = Vector2.scalarMult(scaleDPI, positionRaw);
 		this.positionRay = camera.getRayThroughPixel(positionRaw);
 	}
 }

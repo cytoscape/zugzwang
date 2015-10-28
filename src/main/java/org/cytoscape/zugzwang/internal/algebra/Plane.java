@@ -13,8 +13,8 @@ public class Plane
 	
 	public Vector3 intersect(Ray3 ray)
 	{
-		float denominator = Vector3.Dot(normal, ray.direction);
-		float numerator = Vector3.Dot(Vector3.Subtract(origin, ray.origin), normal);
+		float denominator = Vector3.dot(normal, ray.direction);
+		float numerator = Vector3.dot(Vector3.subtract(origin, ray.origin), normal);
 		
 		if (denominator == 0.0f)
 			if (numerator == 0.0f)
@@ -24,7 +24,7 @@ public class Plane
 		
 		float d = numerator / denominator;
 		
-		return Vector3.Add(ray.origin, Vector3.ScalarMult(d, ray.direction));
+		return Vector3.add(ray.origin, Vector3.scalarMult(d, ray.direction));
 	}
 	
 	@Override

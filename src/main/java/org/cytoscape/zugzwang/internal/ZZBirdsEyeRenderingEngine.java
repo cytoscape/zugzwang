@@ -18,16 +18,20 @@ import org.cytoscape.view.model.VisualLexicon;
 import org.cytoscape.view.model.VisualProperty;
 import org.cytoscape.view.presentation.RenderingEngine;
 import org.cytoscape.work.swing.DialogTaskManager;
-import org.cytoscape.zugzwang.internal.cytoscape.view.ZZNetworkView;
 import org.cytoscape.zugzwang.internal.task.TaskFactoryListener;
+import org.cytoscape.zugzwang.internal.viewmodel.ZZNetworkView;
 
 import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLJPanel;
 
 /** 
- * This class represents a Cy3DRenderingEngine, responsible for
- * creating a rendering of a {@link CyNetwork}.
+ * Cytoscape expects a rendering engine to have 3 renderers: 
+ * main network view renderer, less detailed bird's eye view,
+ * and visual property editor preview. Zugzwang doesn't have
+ * bird's eye view and implements more sophisticated camera
+ * controls instead. They allow to quickly switch between a
+ * zoomed-in view and a global overview.
  */
 class ZZBirdsEyeRenderingEngine implements RenderingEngine<CyNetwork> 
 {	

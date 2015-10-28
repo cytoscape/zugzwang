@@ -1,4 +1,4 @@
-#version 450
+#version 440
 #extension GL_ARB_bindless_texture : require
 
 layout (std140, binding = 0) buffer Samplers
@@ -21,5 +21,8 @@ void main(void)
 	//color = vec4(bla, bla, bla, 1.0f);
 	//color = vec4(float(texID), 1.0f, 1.0f, 1.0f);
 	
-	color = texture(handle[fs_in.texID], fs_in.texCoords);
+	color = texture(handle[fs_in.texID], fs_in.texCoords).abgr;
+	if (color.a < 0.01f)
+		discard;
+	//color = vec4(color.rgb, 1.0f);
 }

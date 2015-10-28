@@ -9,31 +9,50 @@ import org.cytoscape.zugzwang.internal.algebra.*;
 import com.jogamp.opengl.GL4;
 import com.jogamp.opengl.util.GLBuffers;
 
-
+/**
+ * Line manager maintains buffers for line parameters both on 
+ * host and device, and keeps them in sync in case of changes.
+ *
+ */
 public class ZZLineManager
 {
+	// For thread synchronization
 	private final Object m_sync = new Object();
 	
 	private final GL4 gl;
+
+	// Parameters for the default texture that is used when
+	// a rectangle doesn't specify a texture, e. g. because
+	// it hasn't been drawn yet.
 	private long defaultTexture;
 	private short defaultTextureWidth, defaultTextureHeight;
-	
+
+	// Number of currently managed lines, and currently available buffer capacity
 	private int elements = 0, capacity = 0;
-	
+
+	// Information in device buffers can't have gaps. Those would
+	// occur if any line but the last was removed. Line manager
+	// keeps track of the available positions in the allocated buffers, and
+	// distributes them so no gaps occur.
 	private int[] indicesMap, reverseMap;
 	private final Queue<Integer> availableIndices = new LinkedList<>();
-	
+
+	// Host buffers
 	private float[] hostPosition;
 	private short[] hostSize;
 	private long[] hostTexture;
-	
+
+	// Mapped device buffers
 	private ByteBuffer devicePosition;
 	private ByteBuffer deviceSize;
 	private ByteBuffer deviceTexture;
-	
+
+	// Device buffer handles
 	private final int[] attributeBuffers = new int[3];
 	private final int[] vertexArray = new int[1];
-	
+
+	// Update flags, prevent unnecessary updates of buffers
+	// that haven't been altered.
 	private boolean needsUpdatePosition = false;
 	private boolean needsUpdateSize = false;
 	private boolean needsUpdateTexture = false;
@@ -57,7 +76,13 @@ public class ZZLineManager
 		
 		createBuffers();
 	}
-	
+
+	/**
+	 * Deletes old device buffers, allocates new ones, and copies
+	 * data from host buffers to them.
+	 * 
+	 * @param newCapacity Desired new buffer capacity
+	 */
 	public void resize(int newCapacity)
 	{
 		int oldCapacity = capacity;
@@ -103,7 +128,10 @@ public class ZZLineManager
 		
 		createBuffers();
 	}
-	
+
+	/**
+	 * Allocates device buffers of the currently set capacity.
+	 */
 	private void createBuffers()
 	{
 		gl.glGenBuffers(3, attributeBuffers, 0);
@@ -152,7 +180,10 @@ public class ZZLineManager
 			gl.glUnmapBuffer(GL4.GL_SHADER_STORAGE_BUFFER);
 		}
 	}
-	
+
+	/**
+	 * Deletes device buffers.
+	 */
 	private void deleteBuffers()
 	{
 		gl.glDeleteBuffers(3, attributeBuffers, 0);
@@ -162,7 +193,18 @@ public class ZZLineManager
 		deviceSize = null;
 		deviceTexture = null;
 	}
-	
+
+	/**
+	 * Creates a new line and assigns it the next vacant
+	 * position in the buffers. The line will use the 
+	 * default texture. If current buffer capacity is
+	 * insufficient, the capacity will be increased by 50 %.
+	 * 
+	 * @param source Source position
+	 * @param target Target position
+	 * @param width Line width
+	 * @return Created line
+	 */
 	public ZZLine createLine(Vector3 source, Vector3 target, short width)
 	{
 		ZZLine newLine;
@@ -184,7 +226,14 @@ public class ZZLineManager
 		
 		return newLine;
 	}
-	
+
+	/**
+	 * Deletes a line and moves the last line in the 
+	 * buffer up to its position to fill the gap, making 
+	 * the last position vacant.
+	 * 
+	 * @param line Line to be deleted
+	 */
 	public void deleteLine(ZZLine line)
 	{
 		synchronized (m_sync) 
@@ -227,6 +276,12 @@ public class ZZLineManager
 		line.dispose(gl);
 	}
 	
+	/**
+	 * Sets the source's X coordinate
+	 * 
+	 * @param id Line ID
+	 * @param value New X coordinate
+	 */
 	public void setSourceX(int id, float value)
 	{
 		synchronized (m_sync) 
@@ -237,7 +292,13 @@ public class ZZLineManager
 			needsUpdatePosition = true;
 		}
 	}
-	
+
+	/**
+	 * Sets the source's Y coordinate
+	 * 
+	 * @param id Line ID
+	 * @param value New Y coordinate
+	 */
 	public void setSourceY(int id, float value)
 	{
 		synchronized (m_sync) 
@@ -248,7 +309,13 @@ public class ZZLineManager
 			needsUpdatePosition = true;
 		}
 	}
-	
+
+	/**
+	 * Sets the source's Z coordinate
+	 * 
+	 * @param id Line ID
+	 * @param value New Z coordinate
+	 */
 	public void setSourceZ(int id, float value)
 	{
 		synchronized (m_sync) 
@@ -259,7 +326,13 @@ public class ZZLineManager
 			needsUpdatePosition = true;
 		}
 	}
-	
+
+	/**
+	 * Sets the target's X coordinate
+	 * 
+	 * @param id Line ID
+	 * @param value New X coordinate
+	 */
 	public void setTargetX(int id, float value)
 	{
 		synchronized (m_sync) 
@@ -270,7 +343,13 @@ public class ZZLineManager
 			needsUpdatePosition = true;
 		}
 	}
-	
+
+	/**
+	 * Sets the target's Y coordinate
+	 * 
+	 * @param id Line ID
+	 * @param value New Y coordinate
+	 */
 	public void setTargetY(int id, float value)
 	{
 		synchronized (m_sync) 
@@ -281,7 +360,13 @@ public class ZZLineManager
 			needsUpdatePosition = true;
 		}
 	}
-	
+
+	/**
+	 * Sets the target's Z coordinate
+	 * 
+	 * @param id Line ID
+	 * @param value New Z coordinate
+	 */
 	public void setTargetZ(int id, float value)
 	{
 		synchronized (m_sync) 
@@ -292,7 +377,13 @@ public class ZZLineManager
 			needsUpdatePosition = true;
 		}
 	}
-	
+
+	/**
+	 * Sets the line's width
+	 * 
+	 * @param id Line ID
+	 * @param value New width
+	 */
 	public void setWidth(int id, short value)
 	{
 		synchronized (m_sync) 
@@ -305,7 +396,13 @@ public class ZZLineManager
 			needsUpdateSize = true;
 		}
 	}
-	
+
+	/**
+	 * Sets the line's texture width
+	 * 
+	 * @param id Line ID
+	 * @param value New texture width
+	 */
 	public void setTextureSizeU(int id, short value)
 	{
 		synchronized (m_sync) 
@@ -318,7 +415,13 @@ public class ZZLineManager
 			needsUpdateSize = true;
 		}
 	}
-	
+
+	/**
+	 * Sets the line's texture height
+	 * 
+	 * @param id Line ID
+	 * @param value New texture height
+	 */
 	public void setTextureSizeV(int id, short value)
 	{
 		synchronized (m_sync) 
@@ -331,7 +434,13 @@ public class ZZLineManager
 			needsUpdateSize = true;
 		}
 	}
-	
+
+	/**
+	 * Sets the line's bindless texture ID.
+	 * 
+	 * @param id Line ID
+	 * @param value New texture ID
+	 */
 	public void setTexture(int id, long value)
 	{
 		synchronized (m_sync) 
@@ -341,7 +450,12 @@ public class ZZLineManager
 			needsUpdateTexture = true;
 		}
 	}
-	
+
+	/**
+	 * Resets the line's bindless texture ID to the default one.
+	 * 
+	 * @param id Line ID
+	 */
 	public void setTextureToDefault(int id)
 	{
 		synchronized (m_sync) 
@@ -362,7 +476,16 @@ public class ZZLineManager
 			needsUpdateSize = true;
 		}
 	}
-	
+
+	/**
+	 * Sets a bindless texture ID as the new default texture,
+	 * and updates all lines using the default texture
+	 * with the new ID.
+	 * 
+	 * @param newDefault New default bindless texture ID
+	 * @param newWidth New texture width
+	 * @param newHeight New texture height
+	 */
 	public void switchDefaultTexture(long newDefault, short newWidth, short newHeight)
 	{
 		synchronized (m_sync)
@@ -389,7 +512,10 @@ public class ZZLineManager
 			defaultTextureHeight = newHeight;
 		}
 	}
-	
+
+	/**
+	 * Pushes all changes in host buffers to device buffers.
+	 */
 	public void flush()
 	{
 		synchronized (m_sync) 
@@ -429,28 +555,54 @@ public class ZZLineManager
 			}
 		}
 	}
-	
+
+	/**
+	 * Gets the vertex array handle associated with this line manager.
+	 * 
+	 * @return Vertex array handle
+	 */
 	public int getVertexArray()
 	{
 		return vertexArray[0];
 	}
-	
+
+	/**
+	 * Gets the number of lines currently managed.
+	 * 
+	 * @return Number of lines
+	 */
 	public int size()
 	{
 		return elements;
 	}
-	
+
+	/**
+	 * Gets the current buffer capacity.
+	 * 
+	 * @return Buffer capacity
+	 */
 	public int capacity()
 	{
 		return capacity;
 	}
-	
-	public void bind(int program)
+
+	/**
+	 * Binds vertex array and texture ID storage buffer to the current GL context.
+	 */
+	public void bind()
 	{
 		gl.glBindVertexArray(getVertexArray());
 		
 		gl.glBindBuffer(GL4.GL_SHADER_STORAGE_BUFFER, attributeBuffers[2]);
 		gl.glBindBufferBase(GL4.GL_SHADER_STORAGE_BUFFER, 0, attributeBuffers[2]);
 		//gl.glShaderStorageBlockBinding(program, 0, 0);
+	}
+	
+	/**
+	 * Frees all associated device resources.
+	 */
+	public void dispose()
+	{
+		deleteBuffers();
 	}
 }

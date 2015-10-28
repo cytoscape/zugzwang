@@ -9,8 +9,23 @@ import java.util.Scanner;
 
 import com.jogamp.opengl.GL4;
 
+/**
+ * Helper class for compiling GLSL programs.
+ */
 public class GLSLProgram
 {
+	/**
+	 * Takes paths to text files with the individual shaders' code, 
+	 * loads and compiles them, and link everything into a GLSL program.
+	 * 
+	 * @param context Current GL context
+	 * @param pathVS Path to the vertex shader code, null if none is needed
+	 * @param pathTSControl Path to the tesselation control shader code, null if none is needed
+	 * @param pathTSEval Path to the tesselation evaluation shader code, null if none is needed
+	 * @param pathGS Path to the geometry shader code, null if none is needed
+	 * @param pathFS Path to the fragment shader code, null if none is needed
+	 * @return GLSL program handle
+	 */
 	public static int CompileProgram(GL4 context, URL pathVS, URL pathTSControl, URL pathTSEval, URL pathGS, URL pathFS)
 	{
 		try 
@@ -111,6 +126,13 @@ public class GLSLProgram
 		}
 	}
 	
+	/**
+	 * Helper method for loading text from a resource URL
+	 * 
+	 * @param path URL path
+	 * @return Loaded text
+	 * @throws IOException In case no resource was found
+	 */
 	private static String GetText(URL path) throws IOException
 	{
 		InputStream programTextStream = path.openStream();

@@ -29,17 +29,30 @@ import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLJPanel;
 import com.jogamp.opengl.math.FloatUtil;
 
+/**
+ * A viewport takes care of initializing OpenGL, creating a visible control,
+ * and registering user interactions with it, i. e. mouse/keyboard actions.
+ * 
+ */
 public class Viewport implements GLEventListener, MouseListener, MouseMotionListener, MouseWheelListener
 {
+	// Event listeners
 	private HashSet<ViewportEventListener> viewportEventListeners = new HashSet<>();
 	private HashSet<ViewportMouseEventListener> viewportMouseEventListeners = new HashSet<>();
 	
+	// Current GL context
 	private GL4 gl;
 	
+	// Panel that presents GL's frame buffer
 	private GLJPanel panel;
+	
+	// Camera object that is controlled by user actions in this viewport
+	// and that determines the viewport's view and projection matrices
 	private Camera camera;
 	
 	private float scaleDPI;
+	
+	// Mouse handling
 	private Vector2 lastMousePosition;
 	private static class MouseStates
 	{
@@ -54,6 +67,9 @@ public class Viewport implements GLEventListener, MouseListener, MouseMotionList
 	{
 		GLProfile profile = GLProfile.getDefault(); // Use the system's default version of OpenGL
 		GLCapabilities capabilities = new GLCapabilities(profile);
+		capabilities.setDepthBits(24);
+		capabilities.setSampleBuffers(true);
+		capabilities.setNumSamples(8);
 		capabilities.setHardwareAccelerated(true);
 		capabilities.setDoubleBuffered(true);
 		
@@ -80,16 +96,31 @@ public class Viewport implements GLEventListener, MouseListener, MouseMotionList
 		}
 	}
 	
+	/**
+	 * Gets current GL context
+	 * 
+	 * @return GL context
+	 */
 	public GL4 getContext()
 	{
 		return gl;
 	}
 	
+	/**
+	 * Gets the panel that presents the framebuffer
+	 * 
+	 * @return Panel control
+	 */
 	public GLJPanel getPanel()
 	{
 		return panel;
 	}
 	
+	/**
+	 * Gets the camera managed by this viewport
+	 * 
+	 * @return Camera object
+	 */
 	public Camera getCamera()
 	{
 		return camera;
@@ -97,16 +128,22 @@ public class Viewport implements GLEventListener, MouseListener, MouseMotionList
 	
 	// GLEventListener methods:
 
+	/**
+	 * Callback method invoked when the GLJPanel needs to be initialized.
+	 * Sets up permanent GL parameters
+	 * 
+	 * @param GLJPanel handle
+	 */
 	@Override
 	public void init(GLAutoDrawable drawable) 
 	{ 
 		gl = drawable.getGL().getGL4();
 		
-		gl.glEnable(GL4.GL_DEPTH_TEST);
-		
+		gl.glEnable(GL4.GL_DEPTH_TEST);		
 		gl.glDisable(GL4.GL_CULL_FACE);
-
 		gl.glDepthFunc(GL.GL_LEQUAL);
+		gl.glEnable(GL4.GL_BLEND);
+		gl.glBlendFunc(GL4.GL_SRC_ALPHA, GL4.GL_ONE_MINUS_SRC_ALPHA);
 
 		gl.glViewport(0, 0, drawable.getSurfaceWidth(), drawable.getSurfaceHeight());
 		
@@ -118,6 +155,12 @@ public class Viewport implements GLEventListener, MouseListener, MouseMotionList
 		invokeViewportInitializeEvent(drawable);
 	}
 	
+	/**
+	 * Callback method invoked when the GLJPanel needs to be redrawn.
+	 * Clears framebuffer and raises the ViewportDisplay event.
+	 * 
+	 * @param drawable GLJPanel handle
+	 */
 	@Override
 	public void display(GLAutoDrawable drawable) 
 	{ 
@@ -133,9 +176,19 @@ public class Viewport implements GLEventListener, MouseListener, MouseMotionList
 		
 		long timeFinish = System.nanoTime();
 		float FPS = 1.0f / ((float)(timeFinish - timeStart) * 1e-9f);
-		System.out.println(FPS + " fps");
+		//System.out.println(FPS + " fps");
 	}
 
+	/**
+	 * Callback method invoked when the GLJPanel is resized.
+	 * Sets viewport size for GL and raises the ViewportResized event.
+	 * 
+	 * @param drawable GLJPanel handle
+	 * @param x Horizontal offset of the left edge
+	 * @param y Vertical offset of the top edge
+	 * @param width New viewport width
+	 * @param height New viewport height
+	 */
 	@Override
 	public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height) 
 	{
@@ -144,10 +197,22 @@ public class Viewport implements GLEventListener, MouseListener, MouseMotionList
 		gl.glViewport(x, y, width, height);
 		
 		Vector2 newRawSize = new Vector2(width, height);
-		ViewportResizedEvent e = new ViewportResizedEvent(newRawSize, Vector2.ScalarMult(scaleDPI, newRawSize));
+		ViewportResizedEvent e = new ViewportResizedEvent(newRawSize, Vector2.scalarMult(scaleDPI, newRawSize));
 		invokeViewportReshapeEvent(drawable, e);
 	}
+	
+	/**
+	 * Forces the viewport to redraw its contents.
+	 */
+	public void redraw()
+	{
+		panel.repaint();
+	}
 
+	/**
+	 * Frees all resources associated with this viewport
+	 * and raises the ViewportDispose event. 
+	 */
 	@Override
 	public void dispose(GLAutoDrawable drawable) 
 	{ 
@@ -157,7 +222,7 @@ public class Viewport implements GLEventListener, MouseListener, MouseMotionList
 	// Handle mouse events from GLJPanel:
 
 	@Override
-	public void mouseClicked(MouseEvent e) 
+	public void mouseClicked(MouseEvent e)
 	{
 		ViewportMouseEvent event = new ViewportMouseEvent(e, new Vector2(), scaleDPI, camera);
 		invokeViewportMouseDownEvent(event);
@@ -220,6 +285,11 @@ public class Viewport implements GLEventListener, MouseListener, MouseMotionList
 		}
 	}
 
+	/**
+	 * Callback method invoked through mouse cursor dragging.
+	 * Unless hijacked by a listener, the camera is rotated around its
+	 * target (with left button), or panned within the focal plane (with middle button). 
+	 */
 	@Override
 	public void mouseDragged(MouseEvent e) 
 	{
@@ -232,7 +302,7 @@ public class Viewport implements GLEventListener, MouseListener, MouseMotionList
 		else
 		{
 			Vector2 newPosition = new Vector2(e.getX(), e.getY());
-			diff = Vector2.Subtract(newPosition, lastMousePosition);
+			diff = Vector2.subtract(newPosition, lastMousePosition);
 			diff.y *= -1.0f;
 			lastMousePosition = newPosition;
 		}
@@ -244,12 +314,17 @@ public class Viewport implements GLEventListener, MouseListener, MouseMotionList
 		
 		if (mouseState == MouseStates.PAN)
 		{
-			camera.panByPixels(Vector2.ScalarMult(-1.0f, diff));
+			camera.panByPixels(new Vector2(-diff.x, -diff.y));
 			panel.repaint();
 		}
 		else if (mouseState == MouseStates.ROTATE)
 		{
-			camera.orbitBy(-diff.x / (float)panel.getWidth() * FloatUtil.PI, -diff.y / (float)panel.getWidth() * FloatUtil.PI);
+			Vector2 angles = new Vector2(-diff.x, -diff.y);
+            //Angles.Y = 0;
+            angles = Vector2.scalarMult(1.0f / 180f / 4f * FloatUtil.PI, angles);
+            angles.x = -angles.x;
+            
+			camera.orbitBy(angles);
 			panel.repaint();
 		}
 	}
@@ -266,7 +341,7 @@ public class Viewport implements GLEventListener, MouseListener, MouseMotionList
 		else
 		{
 			Vector2 newPosition = new Vector2(e.getX(), e.getY());
-			diff = Vector2.Subtract(newPosition, lastMousePosition);
+			diff = Vector2.subtract(newPosition, lastMousePosition);
 			lastMousePosition = newPosition;
 		}
 		
@@ -276,6 +351,11 @@ public class Viewport implements GLEventListener, MouseListener, MouseMotionList
 			return;
 	}
 
+	/**
+	 * Callback method invoked through mouse wheel scrolling.
+	 * Unless hijacked by a listener, the camera's zoom level is changed, 
+	 * while keeping the position under the mouse cursor constant.
+	 */
 	@Override
 	public void mouseWheelMoved(MouseWheelEvent e) 
 	{
@@ -286,23 +366,23 @@ public class Viewport implements GLEventListener, MouseListener, MouseMotionList
 		
 		// Zoom in or out while keeping the same point under the mouse pointer
 		
-		Vector3 fromTarget = Vector3.Subtract(camera.getCameraPosition(), camera.getTargetPosition());
-		Plane focalPlane = new Plane(camera.getTargetPosition(), fromTarget.Normalize());
+		Vector3 fromTarget = Vector3.subtract(camera.getCameraPosition(), camera.getTargetPosition());
+		Plane focalPlane = new Plane(camera.getTargetPosition(), fromTarget.normalize());
 		Vector3 centerPosition = focalPlane.intersect(event.positionRay);
 		
-		Vector4 oldPositionScreen = Vector4.MatrixMult(camera.getViewProjectionMatrix(), new Vector4(centerPosition, 1.0f)).HomogeneousToCartesian();
+		Vector4 oldPositionScreen = Vector4.matrixMult(camera.getViewProjectionMatrix(), new Vector4(centerPosition, 1.0f)).homogeneousToCartesian();
 		oldPositionScreen.x *= 0.5f * (float)panel.getWidth();
 		oldPositionScreen.y *= 0.5f * (float)panel.getHeight();
 		
 		if (event.delta > 0)
-			fromTarget = Vector3.ScalarMult(1.25f, fromTarget);
+			fromTarget = Vector3.scalarMult(1.25f, fromTarget);
 		else if (event.delta < 0)
-			fromTarget = Vector3.ScalarMult(1.0f / 1.25f, fromTarget);
+			fromTarget = Vector3.scalarMult(1.0f / 1.25f, fromTarget);
 		
-		if (fromTarget.Length() > 0.0f)
-			camera.setCameraPosition(Vector3.Add(camera.getTargetPosition(), fromTarget));
+		if (fromTarget.length() > 0.0f)
+			camera.setDistance(fromTarget.length());
 				
-		Vector4 newPositionScreen = Vector4.MatrixMult(camera.getViewProjectionMatrix(), new Vector4(centerPosition, 1.0f)).HomogeneousToCartesian();
+		Vector4 newPositionScreen = Vector4.matrixMult(camera.getViewProjectionMatrix(), new Vector4(centerPosition, 1.0f)).homogeneousToCartesian();
 		newPositionScreen.x *= 0.5f * (float)panel.getWidth();
 		newPositionScreen.y *= 0.5f * (float)panel.getHeight();
 		

@@ -38,45 +38,60 @@ public class Vector4
 		this.w = w;
 	}
 	
-	public float[] AsArray()
+	public Vector4 copy()
+	{
+		return new Vector4(x, y, z, w);
+	}
+	
+	public float[] asArray()
 	{
 		return new float[] { x, y, z, w };
 	}
 	
-	public float Length()
+	public float length()
 	{
 		return FloatUtil.sqrt(x * x + y * y + z * z + w * w);
 	}
 	
-	public Vector4 Normalize()
+	public float lengthSquared()
 	{
-		float length = Length();
+		return x * x + y * y + z * z + w * w;
+	}
+	
+	public Vector4 normalize()
+	{
+		float length = length();
 		if (length > 0)
 			length = 1.0f / length;
 		return new Vector4(x * length, y * length, z * length, w * length);
 	}
 	
-	public Vector4 HomogeneousToCartesian()
+	public Vector4 negate()
+	{
+		return new Vector4(-x, -y, -z, -w);
+	}
+	
+	public Vector4 homogeneousToCartesian()
 	{
 		return new Vector4(x / w, y / w, z / w, 1.0f);
 	}
 	
-	public static Vector4 Add(Vector4 l, Vector4 r)
+	public static Vector4 add(Vector4 l, Vector4 r)
 	{
 		return new Vector4(l.x + r.x, l.y + r.y, l.z + r.z, l.w + r.w);
 	}
 	
-	public static Vector4 Subtract(Vector4 l, Vector4 r)
+	public static Vector4 subtract(Vector4 l, Vector4 r)
 	{
 		return new Vector4(l.x - r.x, l.y - r.y, l.z - r.z, l.w - r.w);
 	}
 	
-	public static Vector4 ScalarMult(float s, Vector4 v)
+	public static Vector4 scalarMult(float s, Vector4 v)
 	{
 		return new Vector4(v.x * s, v.y * s, v.z * s, v.w * s);
 	}
 	
-	public static Vector4 MatrixMult(Matrix4 m, Vector4 v)
+	public static Vector4 matrixMult(Matrix4 m, Vector4 v)
 	{
 		return new Vector4(m.e11 * v.x + m.e12 * v.y + m.e13 * v.z + m.e14 * v.w,
 						   m.e21 * v.x + m.e22 * v.y + m.e23 * v.z + m.e24 * v.w,
@@ -84,12 +99,27 @@ public class Vector4
 						   m.e41 * v.x + m.e42 * v.y + m.e43 * v.z + m.e44 * v.w);
 	}
 	
-	public static float Dot(Vector4 l, Vector4 r)
+	public static Vector4 quaternionMult(Quaternion q, Vector4 v)
+	{
+		return Vector4.matrixMult(Matrix4.fromQuaternion(q), v);
+	}
+	
+	public static float dot(Vector4 l, Vector4 r)
 	{
 		return l.x * r.x + l.y * r.y + l.z * r.z + l.w * r.w;
 	}
 	
-	public static boolean Equals(Vector4 l, Vector4 r)
+	public static Vector4 min(Vector4 l, Vector4 r)
+	{
+		return new Vector4(Math.min(l.x, r.x), Math.min(l.y, r.y), Math.min(l.z, r.z), Math.min(l.w, r.w));
+	}
+	
+	public static Vector4 max(Vector4 l, Vector4 r)
+	{
+		return new Vector4(Math.max(l.x, r.x), Math.max(l.y, r.y), Math.max(l.z, r.z), Math.max(l.w, r.w));
+	}
+	
+	public static boolean equals(Vector4 l, Vector4 r)
 	{
 		return l.x == r.x && l.y == r.y && l.z == r.z && l.w == r.w;
 	}

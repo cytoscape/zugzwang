@@ -11,6 +11,9 @@ import org.cytoscape.zugzwang.internal.algebra.*;
 
 import com.jogamp.opengl.GL4;
 
+/**
+ * 
+ */
 public class ZZDrawingDaemon 
 {
 	private volatile boolean doShutdown = false;
@@ -27,6 +30,7 @@ public class ZZDrawingDaemon
 	private volatile Matrix4 viewMatrix, projMatrix;
 	private volatile Vector2 halfScreen;
 	private volatile GL4 gl;
+	private volatile boolean updateVisualProperties;
 	
 	public ZZDrawingDaemon()
 	{		
@@ -48,9 +52,22 @@ public class ZZDrawingDaemon
 		}		
 	}
 	
-	public void updateState(List<ZZDrawingDaemonPrimitive> forStateUpdate, GL4 gl, Matrix4 viewMatrix, Matrix4 projMatrix, Vector2 halfScreen)
+	/** 
+	 * Multiple threads go through the forStateUpdate queue in a non-deterministic order,
+	 * calling updateState on each primitive. If it returns true, the primitive is queued
+	 * for a redraw of its textures. This is the first stage of a redrawing iteration. The
+	 * method returns only after each primitive has been processed.
+	 * 
+	 * @param forStateUpdate List of primitives that should be updated
+	 * @param gl Current OpenGL context
+	 * @param viewMatrix Current view matrix
+	 * @param projMatrix Current projection matrix
+	 * @param halfScreen 2D vector containing half the screen's width and height 
+	 */
+	public void updateState(List<ZZDrawingDaemonPrimitive> forStateUpdate, boolean updateVisualProperties, GL4 gl, Matrix4 viewMatrix, Matrix4 projMatrix, Vector2 halfScreen)
 	{
 		this.forStateUpdate = forStateUpdate;
+		this.updateVisualProperties = updateVisualProperties;
 		this.gl = gl;
 		this.viewMatrix = viewMatrix;
 		this.projMatrix = projMatrix;
@@ -67,12 +84,28 @@ public class ZZDrawingDaemon
 		catch (InterruptedException e) { }
 	}
 	
+	/**
+	 * Multiple threads go through the forDrawUpdate queue sequentially, 
+	 * calling redrawTextures on each primitive. If it returns true, the primitive
+	 * is queued for an update of its GPU resources (e. g. texture upload). This
+	 * is the second stage of a drawing iteration. The method returns immediately,
+	 * i. e. relying on the caller to stop the redrawing after a certain time span.
+	 * 
+	 * @param viewMatrix Current view matrix
+	 * @param projMatrix Current projection matrix
+	 */
 	public void updateDraw(Matrix4 viewMatrix, Matrix4 projMatrix)
 	{
+		// Each thread has been paused since the queue was emptied the last time.
+		// Notify all threads to resume them.
 		for (int i = 0; i < poolDraw.length; i++)
 			poolDraw[i].notify();
 	}
 	
+	/**
+	 * Clears the forDrawUpdate queue. If updateDraw has been called before, this
+	 * will effectively stop the redrawing operation.
+	 */
 	public void clearDraw()
 	{
 		synchronized (forDrawUpdate)
@@ -81,6 +114,12 @@ public class ZZDrawingDaemon
 		}
 	}
 	
+	/**
+	 * A single thread goes through the forResourceUpdate queue (because OpenGL),
+	 * calling updateResources on each primitive. This is the last stage of a
+	 * drawing iteration.
+	 * @param gl OpenGL context
+	 */
 	public void updateResources(GL4 gl)
 	{
 		synchronized (forResourceUpdate)
@@ -90,11 +129,18 @@ public class ZZDrawingDaemon
 		}
 	}
 	
+	/**
+	 * Forces all running operations to finish and the threads to return.
+	 */
 	public void dispose()
 	{
 		doShutdown = true;
 	}
 	
+	/**
+	 * Internal class used to call the updateState method
+	 * on queued primitives using multiple threads.
+	 */
 	private class StateRunner implements Runnable
 	{
 		private int threadID;
@@ -106,6 +152,11 @@ public class ZZDrawingDaemon
 			this.numThreads = numThreads;
 		}
 		
+		/**
+		 * Multiple threads go through the forStateUpdate queue in a non-deterministic order,
+		 * calling updateState on each primitive. If it returns true, the primitive is queued
+		 * for a redraw of its textures.
+		 */
 		@Override
 		public void run()
 		{
@@ -113,7 +164,7 @@ public class ZZDrawingDaemon
 			{
 				if (forStateUpdate != null)
 					for (int i = threadID; i < forStateUpdate.size(); i += numThreads)
-						if (forStateUpdate.get(i).updateState(gl, viewMatrix, projMatrix, halfScreen))	// Update state and enqueue for redraw if updateState returns true
+						if (forStateUpdate.get(i).updateState(updateVisualProperties, gl, viewMatrix, projMatrix, halfScreen))	// Update state and enqueue for redraw if updateState returns true
 							synchronized (forDrawUpdate)
 							{
 								forDrawUpdate.add(forStateUpdate.get(i));
@@ -134,6 +185,10 @@ public class ZZDrawingDaemon
 		}		
 	}
 	
+	/**
+	 * Internal class used to call the redrawTexture method 
+	 * on queued primitives using multiple threads.
+	 */
 	private class DrawRunner implements Runnable
 	{
 		private int threadID;
@@ -145,6 +200,11 @@ public class ZZDrawingDaemon
 			this.numThreads = numThreads;
 		}
 		
+		/**
+		 * Multiple threads go through the forDrawUpdate queue sequentially, 
+		 * calling redrawTextures on each primitive. If it returns true, the primitive
+		 * is queued for an update of its GPU resources (e. g. texture upload).
+		 */
 		@Override
 		public void run() 
 		{

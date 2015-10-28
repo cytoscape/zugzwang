@@ -5,6 +5,7 @@ import com.jogamp.opengl.math.FovHVHalves;
 
 public class Matrix4 
 {
+	/** Elements: first 1-based index is row, second is column. **/
 	public float e11, e12, e13, e14,
 				 e21, e22, e23, e24,
 				 e31, e32, e33, e34,
@@ -37,7 +38,7 @@ public class Matrix4
 		this.e41 = values[3]; this.e42 = values[7]; this.e43 = values[11]; this.e44 = values[15];
 	}
 	
-	public float[] AsArrayRM()
+	public float[] asArrayRM()
 	{
 		return new float[] { e11, e12, e13, e14,
 							 e21, e22, e23, e24,
@@ -45,7 +46,7 @@ public class Matrix4
 							 e41, e42, e43, e44};
 	}
 	
-	public float[] AsArrayCM()
+	public float[] asArrayCM()
 	{
 		return new float[] { e11, e21, e31, e41,
 							 e12, e22, e32, e42,
@@ -53,7 +54,7 @@ public class Matrix4
 							 e14, e24, e34, e44};
 	}
 	
-	public Matrix4 Transpose()
+	public Matrix4 transpose()
 	{
 		return new Matrix4(e11, e21, e31, e41,
 						   e12, e22, e32, e42,
@@ -61,7 +62,7 @@ public class Matrix4
 						   e14, e24, e34, e44);		
 	}
 	
-	public static Matrix4 Mult(Matrix4 l, Matrix4 r)
+	public static Matrix4 mult(Matrix4 l, Matrix4 r)
 	{
 		return new Matrix4(l.e11 * r.e11 + l.e12 * r.e21 + l.e13 * r.e31 + l.e14 * r.e41,   l.e11 * r.e12 + l.e12 * r.e22 + l.e13 * r.e32 + l.e14 * r.e42,   l.e11 * r.e13 + l.e12 * r.e23 + l.e13 * r.e33 + l.e14 * r.e43,   l.e11 * r.e14 + l.e12 * r.e24 + l.e13 * r.e34 + l.e14 * r.e44,
 						   l.e21 * r.e11 + l.e22 * r.e21 + l.e23 * r.e31 + l.e24 * r.e41,   l.e21 * r.e12 + l.e22 * r.e22 + l.e23 * r.e32 + l.e24 * r.e42,   l.e21 * r.e13 + l.e22 * r.e23 + l.e23 * r.e33 + l.e24 * r.e43,   l.e21 * r.e14 + l.e22 * r.e24 + l.e23 * r.e34 + l.e24 * r.e44,
@@ -69,7 +70,7 @@ public class Matrix4
 						   l.e41 * r.e11 + l.e42 * r.e21 + l.e43 * r.e31 + l.e44 * r.e41,   l.e41 * r.e12 + l.e42 * r.e22 + l.e43 * r.e32 + l.e44 * r.e42,   l.e41 * r.e13 + l.e42 * r.e23 + l.e43 * r.e33 + l.e44 * r.e43,   l.e41 * r.e14 + l.e42 * r.e24 + l.e43 * r.e34 + l.e44 * r.e44);
 	}
 	
-	public static Matrix4 Add(Matrix4 l, Matrix4 r)
+	public static Matrix4 add(Matrix4 l, Matrix4 r)
 	{
 		return new Matrix4(l.e11 + r.e11,   l.e12 + r.e12,   l.e13 + r.e13,   l.e14 + r.e14,
 						   l.e21 + r.e21,   l.e22 + r.e22,   l.e23 + r.e23,   l.e24 + r.e24,
@@ -77,7 +78,7 @@ public class Matrix4
 						   l.e41 + r.e41,   l.e42 + r.e42,   l.e43 + r.e43,   l.e44 + r.e44);
 	}
 	
-	public static Matrix4 Subtract(Matrix4 l, Matrix4 r)
+	public static Matrix4 subtract(Matrix4 l, Matrix4 r)
 	{
 		return new Matrix4(l.e11 - r.e11,   l.e12 - r.e12,   l.e13 - r.e13,   l.e14 - r.e14,
 						   l.e21 - r.e21,   l.e22 - r.e22,   l.e23 - r.e23,   l.e24 - r.e24,
@@ -85,7 +86,7 @@ public class Matrix4
 						   l.e41 - r.e41,   l.e42 - r.e42,   l.e43 - r.e43,   l.e44 - r.e44);
 	}
 	
-	public static Matrix4 Identity()
+	public static Matrix4 identity()
 	{
 		return new Matrix4(1, 0, 0, 0,
 						   0, 1, 0, 0,
@@ -93,7 +94,7 @@ public class Matrix4
 						   0, 0, 0, 1);
 	}
 	
-	public static Matrix4 RotationX(float radians)
+	public static Matrix4 rotationX(float radians)
 	{
 		float cos = FloatUtil.cos(radians);
 		float sin = FloatUtil.sin(radians);
@@ -104,7 +105,7 @@ public class Matrix4
 						   0,   0,    0, 1);
 	}
 	
-	public static Matrix4 RotationY(float radians)
+	public static Matrix4 rotationY(float radians)
 	{
 		float cos = FloatUtil.cos(radians);
 		float sin = FloatUtil.sin(radians);
@@ -115,7 +116,7 @@ public class Matrix4
 						      0,   0,   0, 1);
 	}
 	
-	public static Matrix4 RotationZ(float radians)
+	public static Matrix4 rotationZ(float radians)
 	{
 		float cos = FloatUtil.cos(radians);
 		float sin = FloatUtil.sin(radians);
@@ -126,7 +127,63 @@ public class Matrix4
 						     0,    0, 0, 1);
 	}
 	
-	public static Matrix4 Translation(Vector3 v)
+	/**
+	 * Creates a matrix that represents a rotation around a rotated axis.
+	 * Copied from OpenTK.
+	 * 
+	 * @param axis Rotated axis
+	 * @param angle Rotation angle around the axis
+	 * @return Rotation matrix
+	 */
+	public static Matrix4 fromAxisAngle(Vector3 axis, float angle)
+    {
+		Matrix4 result = identity();
+		
+        // Normalize and create a local copy of the vector.
+        axis = axis.normalize();
+        float axisX = axis.x, axisY = axis.y, axisZ = axis.z;
+
+        // Calculate angles
+        float cos = FloatUtil.cos(-angle);
+        float sin = FloatUtil.sin(-angle);
+        float t = 1.0f - cos;
+
+        // Do the conversion math once
+        float tXX = t * axisX * axisX,
+			  tXY = t * axisX * axisY,
+			  tXZ = t * axisX * axisZ,
+			  tYY = t * axisY * axisY,
+			  tYZ = t * axisY * axisZ,
+			  tZZ = t * axisZ * axisZ;
+
+        float sinX = sin * axisX,
+              sinY = sin * axisY,
+              sinZ = sin * axisZ;
+
+        result.e11 = tXX + cos;
+        result.e12 = tXY - sinZ;
+        result.e13 = tXZ + sinY;
+
+        result.e21 = tXY + sinZ;
+        result.e22 = tYY + cos;
+        result.e23 = tYZ - sinX;
+
+        result.e31 = tXZ - sinY;
+        result.e32 = tYZ + sinX;
+        result.e33 = tZZ + cos;
+
+        return result;
+    }
+	
+	public static Matrix4 fromQuaternion(Quaternion q)
+	{
+		Vector3 axis = q.toAxisAngle();
+		float angle = axis.length();
+		
+		return fromAxisAngle(axis, angle);
+	}
+	
+	public static Matrix4 translation(Vector3 v)
 	{
 		return new Matrix4(1, 0, 0, v.x,
 						   0, 1, 0, v.y,
@@ -134,7 +191,7 @@ public class Matrix4
 						   0, 0, 0,   1);
 	}
 	
-	public static Matrix4 Scale(Vector3 v)
+	public static Matrix4 scale(Vector3 v)
 	{
 		return new Matrix4(v.x,   0,   0, 0,
 						     0, v.y,   0, 0,
@@ -142,7 +199,7 @@ public class Matrix4
 						     0,   0,   0, 1);
 	}
 	
-	public static Matrix4 LookAtRH(Vector3 camera, Vector3 target, Vector3 up)
+	public static Matrix4 lookAtRH(Vector3 camera, Vector3 target, Vector3 up)
 	{
 		/*Vector3 forward = Vector3.Subtract(target, camera).Normalize();
 	    Vector3 right = Vector3.Cross(forward, up).Normalize();
@@ -153,10 +210,10 @@ public class Matrix4
 	    				   right.z, up.z, forward.z, -camera.z,
 	    				         0,    0,         0,         1);*/
 	    
-	    return new Matrix4(FloatUtil.makeLookAt(new float[16], 0, camera.AsArray(), 0, target.AsArray(), 0, up.AsArray(), 0, new float[16]));
+	    return new Matrix4(FloatUtil.makeLookAt(new float[16], 0, camera.asArray(), 0, target.asArray(), 0, up.asArray(), 0, new float[16]));
 	}
 	
-	public static Matrix4 ProjectionPerspective(float aspectRatio, float fieldOfView, float near, float far)
+	public static Matrix4 projectionPerspective(float aspectRatio, float fieldOfView, float near, float far)
 	{
 		float tan = FloatUtil.tan(fieldOfView * 0.5f);
 		float range = near - far;
@@ -169,7 +226,7 @@ public class Matrix4
 		return new Matrix4(FloatUtil.makePerspective(new float[16], 0, true, new FovHVHalves(fieldOfView * 0.5f, fieldOfView * 0.5f, fieldOfView * 0.5f / aspectRatio, fieldOfView * 0.5f / aspectRatio, true), near, far));
 	}
 	
-	public static Matrix4 ProjectionOrthogonal(int width, int height, float near, float far)
+	public static Matrix4 projectionOrthogonal(int width, int height, float near, float far)
 	{
 		float range = far - near;
 		

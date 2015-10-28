@@ -24,51 +24,76 @@ public class Vector2
 		this.y = values[1];
 	}
 	
-	public float[] AsArray()
+	public Vector2 copy()
+	{
+		return new Vector2(x, y);
+	}
+	
+	public float[] asArray()
 	{
 		return new float[] { x, y };
 	}
 	
-	public float Length()
+	public float length()
 	{
 		return FloatUtil.sqrt(x * x + y * y);
 	}
 	
-	public Vector2 Normalize()
+	public float lengthSquared()
 	{
-		float length = Length();
+		return x * x + y * y;
+	}
+	
+	public Vector2 normalize()
+	{
+		float length = length();
 		if (length > 0)
 			length = 1.0f / length;
 		return new Vector2(x * length, y * length);
 	}
 	
-	public static Vector2 Add(Vector2 l, Vector2 r)
+	public Vector2 negate()
+	{
+		return new Vector2(-x, -y);
+	}
+	
+	public static Vector2 add(Vector2 l, Vector2 r)
 	{
 		return new Vector2(l.x + r.x, l.y + r.y);
 	}
 	
-	public static Vector2 Subtract(Vector2 l, Vector2 r)
+	public static Vector2 subtract(Vector2 l, Vector2 r)
 	{
 		return new Vector2(l.x - r.x, l.y - r.y);
 	}
 	
-	public static Vector2 ScalarMult(float s, Vector2 v)
+	public static Vector2 scalarMult(float s, Vector2 v)
 	{
 		return new Vector2(v.x * s, v.y * s);
 	}
 	
-	public static Vector2 MatrixMult(Matrix2 m, Vector2 v)
+	public static Vector2 matrixMult(Matrix2 m, Vector2 v)
 	{
 		return new Vector2(m.e11 * v.x + m.e12 * v.y,
 						   m.e21 * v.x + m.e22 * v.y);
 	}
 	
-	public static float Dot(Vector2 l, Vector2 r)
+	public static float dot(Vector2 l, Vector2 r)
 	{
 		return l.x * r.x + l.y * r.y;
 	}
 	
-	public static boolean Equals(Vector2 l, Vector2 r)
+	public static Vector2 min(Vector2 l, Vector2 r)
+	{
+		return new Vector2(Math.min(l.x, r.x), Math.min(l.y, r.y));
+	}
+	
+	public static Vector2 max(Vector2 l, Vector2 r)
+	{
+		return new Vector2(Math.max(l.x, r.x), Math.max(l.y, r.y));
+	}
+	
+	public static boolean equals(Vector2 l, Vector2 r)
 	{
 		return l.x == r.x && l.y == r.y;
 	}
